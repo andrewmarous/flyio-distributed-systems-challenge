@@ -34,7 +34,7 @@ int main() {
     Output buffer;
     std::ostream output(&buffer);
     maelstrom::Node node(input, output);
-    maelstrom::node_on(node, "echo", [](auto& self, const auto& request) {
+    maelstrom::node_add_handler(node, "echo", [](auto& self, const auto& request) {
         return maelstrom::node_reply(self, request,
             Json{{"type", "echo_ok"}, {"echo", request.body.at("echo")}});
     });

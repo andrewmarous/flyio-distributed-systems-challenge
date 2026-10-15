@@ -2,15 +2,43 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  echo "Usage: $0 [BAZEL_TARGET [WORKLOAD [MAELSTROM_OPTIONS...]]]"
-  echo "Defaults: //apps/c1_echo:echo echo --node-count 1 --time-limit 10"
-  exit 0
-fi
-TARGET="${1:-//apps/c1_echo:echo}"
-WORKLOAD="${2:-echo}"
-if (( $# > 0 )); then shift; fi
-if (( $# > 0 )); then shift; fi
+usage() {
+  echo "Usage: $0 --challenge|-c [1|2|3|4|5|6]"
+  echo "Run a challenge's full Maelstrom integration test. Only challenge 1 is implemented."
+}
+
+fail() {
+  echo "Error: $*" >&2
+  usage >&2
+  exit 2
+}
+
+CHALLENGE=""
+while (( $# > 0 )); do
+  case "$1" in
+    --challenge|-c)
+      [[ $# -ge 2 ]] || fail "$1 requires a challenge number"
+      [[ -z "$CHALLENGE" ]] || fail "challenge specified more than once"
+      CHALLENGE="$2"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *) fail "unknown argument: $1" ;;
+  esac
+done
+
+case "$CHALLENGE" in
+  1)
+    TARGET="//apps/c1_echo:echo"
+    WORKLOAD="echo"
+    ;;
+  2|3|4|5|6) fail "challenge $CHALLENGE is not implemented yet" ;;
+  "") fail "--challenge/-c is required" ;;
+  *) fail "invalid challenge '$CHALLENGE'; expected 1 through 6" ;;
+esac
 
 for tool in bazel java dot gnuplot; do
   command -v "$tool" >/dev/null 2>&1 || {
@@ -43,4 +71,4 @@ echo "Maelstrom results: $RUN_DIR/store" >&2
 cd "$RUN_DIR"
 exec java -Djava.awt.headless=true \
   -jar "$ROOT/third_party/maelstrom/lib/maelstrom.jar" test \
-  -w "$WORKLOAD" --bin "$BINARY" --node-count 1 --time-limit 10 "$@"
+  -w "$WORKLOAD" --bin "$BINARY" --node-count 1 --time-limit 10

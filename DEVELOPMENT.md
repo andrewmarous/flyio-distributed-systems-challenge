@@ -32,20 +32,17 @@ Install or restore Maelstrom:
 This script downloads the archive if absent, verifies its checksum, and replaces the extracted installation.
 It requires `curl`, `tar`, and either `sha256sum` or `shasum`.
 
-Build and run the echo workload:
+Build and run the full integration test for challenge 1 (echo):
 
 ```sh
-./tools/run-maelstrom.sh
+./tools/test.sh --challenge 1
+# Short form:
+./tools/test.sh -c 1
 ```
 
-**The current `apps/c1_echo/echo.cpp` has an empty `main()`.**
-Implement its node loop and echo handler before expecting the workload to pass.
-
-Select another executable and workload, or override the default test options:
-
-```sh
-./tools/run-maelstrom.sh //apps/c1_echo:echo echo --node-count 3 --time-limit 20
-```
+The challenge flag is required. Challenges 2 through 6 return a not-implemented error.
+Other challenge numbers and unknown arguments return a usage error.
+Challenge 1 runs the echo workload with one node for 10 seconds.
 
 The wrapper builds the target and resolves its executable through Bazel.
 It then runs Maelstrom with an absolute executable path.
