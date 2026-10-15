@@ -1,0 +1,23 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+cc_library(
+    name = "maelstrom",
+    srcs = ["message.cpp", "node.cpp"],
+    hdrs = ["message.hpp", "node.hpp"],
+    deps = ["@nlohmann_json//:json"],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "message_test",
+    size = "small",
+    srcs = ["test/message_test.cpp"],
+    deps = [":maelstrom"],
+)
+
+cc_test(
+    name = "node_test",
+    size = "small",
+    srcs = ["test/node_test.cpp"],
+    deps = [":maelstrom"],
+)

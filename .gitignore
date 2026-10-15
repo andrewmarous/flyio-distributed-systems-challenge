@@ -1,0 +1,7 @@
+/bazel-*
+/external
+/compile_commands.json
+/.cache/
+/third_party/maelstrom/
+/third_party/maelstrom.tar.bz2
+/third_party/.maelstrom-*/

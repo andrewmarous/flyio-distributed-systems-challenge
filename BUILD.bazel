@@ -1,0 +1,9 @@
+load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
+
+refresh_compile_commands(
+    name = "refresh_compile_commands",
+    targets = ["//lib:maelstrom"],
+    # clangd infers header commands from nearby source files.
+    # Avoid the extractor's header-cache parser, which does not support Bazel 9.
+    exclude_headers = "all",
+)

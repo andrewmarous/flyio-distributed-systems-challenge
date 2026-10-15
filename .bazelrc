@@ -1,0 +1,5 @@
+# Compatibility for the extractor's legacy native Python and C++ rules on Bazel 9.
+common --incompatible_autoload_externally=+@rules_python,+@rules_cc
+
+build --cxxopt=-std=c++23
+build --host_cxxopt=-std=c++23
