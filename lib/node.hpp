@@ -23,10 +23,12 @@ namespace maelstrom {
                       std::ostream& output = std::cout)
             : input(input), output(output) {}
 
-        std::string id;
+        // Zero-based position in node_ids; valid after initialization.
+        std::uint64_t pid = 0;
+        std::string id_string;
         std::vector<std::string> node_ids; // Full membership, including this node.
         std::vector<std::string> neighbors; // Workload-defined topology.
-        std::int64_t next_msg_id = 1;
+        std::uint64_t seqnum = 1;
         bool initialized = false;
         std::unordered_map<std::string, Handler> handlers;
         std::istream& input;

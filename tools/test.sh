@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 usage() {
   echo "Usage: $0 --challenge|-c [1|2|3|4|5|6]"
-  echo "Run a challenge's full Maelstrom integration test. Only challenge 1 is implemented."
+  echo "Run a challenge's full Maelstrom integration test. Challenges 1 and 2 are implemented."
 }
 
 fail() {
@@ -34,8 +34,14 @@ case "$CHALLENGE" in
   1)
     TARGET="//apps/c1_echo:echo"
     WORKLOAD="echo"
+    TEST_ARGS=(--node-count 1 --time-limit 10)
     ;;
-  2|3|4|5|6) fail "challenge $CHALLENGE is not implemented yet" ;;
+  2)
+    TARGET="//apps/c2_unique_ids:unique_ids"
+    WORKLOAD="unique-ids"
+    TEST_ARGS=(--time-limit 30 --rate 1000 --node-count 3 --availability total --nemesis partition)
+    ;;
+  3|4|5|6) fail "challenge $CHALLENGE is not implemented yet" ;;
   "") fail "--challenge/-c is required" ;;
   *) fail "invalid challenge '$CHALLENGE'; expected 1 through 6" ;;
 esac
@@ -71,4 +77,4 @@ echo "Maelstrom results: $RUN_DIR/store" >&2
 cd "$RUN_DIR"
 exec java -Djava.awt.headless=true \
   -jar "$ROOT/third_party/maelstrom/lib/maelstrom.jar" test \
-  -w "$WORKLOAD" --bin "$BINARY" --node-count 1 --time-limit 10
+  -w "$WORKLOAD" --bin "$BINARY" "${TEST_ARGS[@]}"

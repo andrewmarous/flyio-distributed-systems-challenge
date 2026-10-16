@@ -1,9 +1,17 @@
+#include <array>
 #include <iostream>
 
 #include "lib/message.hpp"
 #include "lib/node.hpp"
 
 #pragma once
+
+struct UniqueID {
+    std::uint64_t seqnr;
+    std::uint64_t pid;
+};
+
+using id = std::array<std::uint64_t, 2>;
 
 int main() {
     maelstrom::Node node;
@@ -13,7 +21,7 @@ int main() {
            const maelstrom::Message &req) -> maelstrom::Result {
             return maelstrom::node_reply(
                 self, req,
-                Json{{"type", "generate_ok"}, {"id", self.next_msg_id++}});
+                Json{{"type", "generate_ok"}, {"id", id{self.pid, self.seqnum}}});
         });
 
     auto result = maelstrom::node_run(node);

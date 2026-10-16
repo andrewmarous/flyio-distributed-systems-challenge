@@ -13,6 +13,7 @@ namespace maelstrom {
         Json body;
     };
 
+
     // nlohmann::json finds these hooks through argument-dependent lookup.
     // They must be declared in the same namespace as Message.
     // Invalid envelopes throw Json::exception (including a non-object body).
@@ -23,3 +24,4 @@ namespace maelstrom {
     std::expected<Message, std::string> msg_deserialize(const Json& json);
     std::expected<Json, std::string> msg_serialize(const Message& message);
 }
+

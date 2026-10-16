@@ -40,9 +40,18 @@ Build and run the full integration test for challenge 1 (echo):
 ./tools/test.sh -c 1
 ```
 
-The challenge flag is required. Challenges 2 through 6 return a not-implemented error.
+The challenge flag is required. Challenges 3 through 6 return a not-implemented error.
 Other challenge numbers and unknown arguments return a usage error.
 Challenge 1 runs the echo workload with one node for 10 seconds.
+
+Run challenge 2:
+
+```sh
+./tools/test.sh -c 2
+```
+
+Challenge 2 runs `unique-ids` for 30 seconds at rate 1000 with three nodes,
+total availability, and network partitions.
 
 The wrapper builds the target and resolves its executable through Bazel.
 It then runs Maelstrom with an absolute executable path.

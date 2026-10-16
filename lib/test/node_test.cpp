@@ -39,7 +39,8 @@ int main() {
             Json{{"type", "echo_ok"}, {"echo", request.body.at("echo")}});
     });
     require(maelstrom::node_run(node).has_value());
-    require(node.id == "n1");
+    require(node.id_string == "n1");
+    require(node.pid == 0);
     require(node.node_ids == std::vector<std::string>({"n1", "n2"}));
     require(node.neighbors.empty());
     require(buffer.flushes == 2);
@@ -59,6 +60,33 @@ int main() {
     require((**first).body.at("msg_id") != (**second).body.at("msg_id"));
     auto eof = maelstrom::node_recv(replies);
     require(eof.has_value() && !eof->has_value());
+
+    auto check_membership = [](Json ids, std::string id,
+                               bool valid, std::uint64_t expected_pid = 0) {
+        auto message = init;
+        message["body"]["node_ids"] = std::move(ids);
+        message["body"]["node_id"] = std::move(id);
+        std::istringstream input(message.dump() + "\n");
+        std::ostringstream output;
+        maelstrom::Node node(input, output);
+        require(maelstrom::node_run(node).has_value() == valid);
+        require(node.initialized == valid);
+        if (valid) {
+            require(node.pid == expected_pid);
+        } else {
+            require(output.str().empty());
+        }
+    };
+    check_membership(Json{"alpha", "beta"}, "beta", true, 1);
+    check_membership(Json{"alpha"}, "beta", false);
+    check_membership(Json{"alpha", "alpha"}, "alpha", false);
+    check_membership(Json::array(), "alpha", false);
+    Json large_membership = Json::array();
+    for (int i = 0; i < 256; ++i)
+        large_membership.push_back("node-" + std::to_string(i));
+    check_membership(large_membership, "node-255", true, 255);
+    large_membership.push_back("node-256");
+    check_membership(large_membership, "node-256", true, 256);
 
     std::istringstream malformed("not JSON\n");
     require(!maelstrom::node_recv(malformed).has_value());
@@ -92,6 +120,6 @@ int main() {
     failed_output.setstate(std::ios::badbit);
     maelstrom::Node unwritable(failed_input, failed_output);
     unwritable.initialized = true;
-    unwritable.id = "n1";
+    unwritable.id_string = "n1";
     require(!maelstrom::node_send(unwritable, "n2", Json::object()).has_value());
 }

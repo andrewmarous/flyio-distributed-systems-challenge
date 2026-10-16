@@ -1,5 +1,6 @@
 #include "node.hpp"
 
+#include <algorithm>
 #include <limits>
 #include <utility>
 
@@ -13,12 +14,12 @@ namespace maelstrom {
             return std::unexpected("cannot send before initialization");
         if (!body.is_object())
             return std::unexpected("message body must be an object");
-        if (self.next_msg_id == std::numeric_limits<std::int64_t>::max())
+        if (self.seqnum == std::numeric_limits<std::uint64_t>::max())
             return std::unexpected("message ID counter exhausted");
 
         try {
-            body["msg_id"] = self.next_msg_id++;
-            const Json envelope = Message{self.id, dest, std::move(body)};
+            body["msg_id"] = self.seqnum++;
+            const Json envelope = Message{self.id_string, dest, std::move(body)};
             self.output << envelope.dump() << '\n' << std::flush;
             if (!self.output)
                 return std::unexpected("failed to write message");
@@ -92,7 +93,15 @@ namespace maelstrom {
                     auto id = request.body.at("node_id").get<std::string>();
                     auto ids = request.body.at("node_ids")
                                    .get<std::vector<std::string>>();
-                    self.id = std::move(id);
+                    const auto position = std::find(ids.begin(), ids.end(), id);
+                    if (position == ids.end())
+                        return std::unexpected("node_id is missing from node_ids");
+                    auto sorted_ids = ids;
+                    std::sort(sorted_ids.begin(), sorted_ids.end());
+                    if (std::adjacent_find(sorted_ids.begin(), sorted_ids.end()) != sorted_ids.end())
+                        return std::unexpected("node_ids contains duplicate IDs");
+                    self.pid = static_cast<std::uint64_t>(position - ids.begin());
+                    self.id_string = std::move(id);
                     self.node_ids = std::move(ids);
                     self.initialized = true;
                     auto result = node_reply(self, request, Json{{"type", "init_ok"}});
