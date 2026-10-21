@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <iostream>
 
@@ -15,13 +16,33 @@ using id = std::array<std::uint64_t, 2>;
 
 int main() {
     maelstrom::Node node;
+
+    // NOTE: don't need retries yet b/c network assumed reliable
     maelstrom::node_add_handler(
         node, "broadcast",
         [](maelstrom::Node &self,
            const maelstrom::Message &req) -> maelstrom::Result {
-            self.bcast_messages.push_back(req.body["message"]);
+            int msg = req.body.at("message");
+            if (!std::ranges::contains(self.bcast_messages, msg)) {
+                self.bcast_messages.push_back(msg);
+                for (const auto &other : self.neighbors) {
+                    auto result = maelstrom::node_send(
+                        self, other, {{"type", "broadcast"}, {"message", msg}});
+
+                    if (!result)
+                        std::cerr
+                            << "Error relaying broadcast: " << result.error()
+                            << "\n";
+                }
+            }
+
             return maelstrom::node_reply(self, req, {{"type", "broadcast_ok"}});
         });
+
+    maelstrom::node_add_handler(
+        node, "broadcast_ok",
+        [](maelstrom::Node &self, const maelstrom::Message &req)
+            -> maelstrom::Result { return maelstrom::Result{}; });
 
     maelstrom::node_add_handler(
         node, "read",
