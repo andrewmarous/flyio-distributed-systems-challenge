@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "message.hpp"
@@ -34,7 +35,7 @@ namespace maelstrom {
         std::istream& input;
         std::ostream& output;
 
-        std::vector<int> bcast_messages;
+        std::unordered_set<int> bcast_messages;
     };
 
     void node_add_handler(Node& self, std::string type, Handler handler);

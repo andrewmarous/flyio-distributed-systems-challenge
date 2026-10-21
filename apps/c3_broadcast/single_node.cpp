@@ -1,18 +1,9 @@
-#include <algorithm>
-#include <array>
 #include <iostream>
 
 #include "lib/message.hpp"
 #include "lib/node.hpp"
 
 #pragma once
-
-struct UniqueID {
-    std::uint64_t seqnr;
-    std::uint64_t pid;
-};
-
-using id = std::array<std::uint64_t, 2>;
 
 int main() {
     maelstrom::Node node;
@@ -23,8 +14,7 @@ int main() {
         [](maelstrom::Node &self,
            const maelstrom::Message &req) -> maelstrom::Result {
             int msg = req.body.at("message");
-            if (!std::ranges::contains(self.bcast_messages, msg)) {
-                self.bcast_messages.push_back(msg);
+            if (self.bcast_messages.insert(msg).second) {
                 for (const auto &other : self.neighbors) {
                     auto result = maelstrom::node_send(
                         self, other, {{"type", "broadcast"}, {"message", msg}});
