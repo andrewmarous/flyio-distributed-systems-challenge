@@ -1,0 +1,8 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "broadcast",
+    srcs = ["single_node.cpp"],
+    deps = ["//lib:maelstrom"],
+)
+

@@ -33,6 +33,8 @@ namespace maelstrom {
         std::unordered_map<std::string, Handler> handlers;
         std::istream& input;
         std::ostream& output;
+
+        std::vector<int> bcast_messages;
     };
 
     void node_add_handler(Node& self, std::string type, Handler handler);
