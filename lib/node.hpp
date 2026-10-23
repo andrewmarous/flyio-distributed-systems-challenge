@@ -20,9 +20,15 @@ namespace maelstrom {
 
     struct Node {
         // The streams must outlive the node. Defaults connect to Maelstrom.
-        explicit Node(std::istream& input = std::cin,
+        Node() : Node(0) {}
+
+        explicit Node(std::istream& input,
                       std::ostream& output = std::cout)
             : input(input), output(output) {}
+
+        // Borrowed descriptor: the caller keeps it open until node_run returns.
+        explicit Node(int fd, std::ostream& output = std::cout)
+            : input(std::cin), output(output), input_fd(fd) {}
 
         // Zero-based position in node_ids; valid after initialization.
         std::uint64_t pid = 0;
@@ -34,6 +40,8 @@ namespace maelstrom {
         std::unordered_map<std::string, Handler> handlers;
         std::istream& input;
         std::ostream& output;
+        // Empty selects the blocking stream adapter (primarily for tests).
+        std::optional<int> input_fd;
 
         std::unordered_set<int> bcast_messages;
     };

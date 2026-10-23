@@ -1,5 +1,7 @@
 #include "lib/node.hpp"
 
+#include <fcntl.h>
+#include <unistd.h>
 #include <sstream>
 #include <stdexcept>
 
@@ -95,6 +97,46 @@ int main() {
     std::istringstream broken;
     broken.setstate(std::ios::badbit);
     require(!maelstrom::node_recv(broken).has_value());
+
+    // Exercise descriptor input, EOF, dispatch errors, and flag restoration.
+    auto check_pipe = [&](const std::string& data, bool success,
+                          bool initially_nonblocking = false) {
+        int fds[2];
+        require(::pipe(fds) == 0);
+        if (initially_nonblocking)
+            require(::fcntl(fds[0], F_SETFL, O_NONBLOCK) != -1);
+        const int original = ::fcntl(fds[0], F_GETFL);
+        require(::write(fds[1], data.data(), data.size()) ==
+                static_cast<ssize_t>(data.size()));
+        require(::close(fds[1]) == 0);
+        std::ostringstream output;
+        maelstrom::Node node(fds[0], output);
+        maelstrom::node_add_handler(node, "echo", [](auto& self, const auto& req) {
+            // Replacing the executing callback must be safe.
+            maelstrom::node_add_handler(self, "echo", [](auto&, const auto&) {
+                return maelstrom::Result{};
+            });
+            return maelstrom::node_reply(self, req, {{"type", "echo_ok"}});
+        });
+        require(maelstrom::node_run(node).has_value() == success);
+        require(::fcntl(fds[0], F_GETFL) == original);
+        require(::close(fds[0]) == 0);
+        return output.str();
+    };
+    const auto pipe_replies = check_pipe(init.dump() + "\n" + echo.dump() + "\n", true);
+    require(pipe_replies.find("init_ok") != std::string::npos);
+    require(pipe_replies.find("echo_ok") != std::string::npos);
+    check_pipe("", true, true);
+    check_pipe("{", false);
+    check_pipe("not JSON\n", false);
+    check_pipe(echo.dump() + "\n", false);
+    check_pipe(init.dump() + "\n" + init.dump() + "\n", false);
+    auto unknown_message = echo;
+    unknown_message["body"]["type"] = "unknown";
+    check_pipe(init.dump() + "\n" + unknown_message.dump() + "\n", false);
+    auto missing_type = echo;
+    missing_type["body"].erase("type");
+    check_pipe(init.dump() + "\n" + missing_type.dump() + "\n", false);
 
     const auto before = buffer.str();
     require(!maelstrom::node_reply(node, {"c1", "n1", Json::object()},
